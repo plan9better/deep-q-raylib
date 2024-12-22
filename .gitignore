@@ -398,9 +398,7 @@ FodyWeavers.xsd
 *.sln.iml
 build_files
 raylib-master
-Makefile
 /*.sln
 
 src/venv
-build/
 *.pth
