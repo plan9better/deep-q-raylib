@@ -403,3 +403,4 @@ Makefile
 
 src/venv
 build/
+*.pth
