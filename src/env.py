@@ -111,8 +111,6 @@ ACTIONS = {
 }
 
 def start_server() -> Dict:
-
-def train_agent(env, agent, episodes=1000):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
         server_socket.bind((HOST, PORT))
         server_socket.listen()
@@ -120,36 +118,41 @@ def train_agent(env, agent, episodes=1000):
         
         conn, addr = server_socket.accept()
         obj = Dict
+        counter = 0;
         with conn:
             print(f"Connected by {addr}")
-            for episode in range(episodes):
+            while True:
                 data = conn.recv(4096)
                 if data == None:
                     break
-                state = json.loads(data)
-                # if(counter == 1000):
-                #     conn.sendall("RESET".encode())
-                #     counter = 0
-                # else:
-                #     conn.sendall(ACTIONS[random.randint(0, 9)].encode())
-                #     counter += 1
-                conn.sendall("RESET".encode())
-                total_reward = 0
-                done = False
-                while not done:
-                    action = agent.act(state)
-                    next_state, reward, done, _ = env.step(action)
-                    agent.remember(state, action, reward, next_state, done)
-                    state = next_state
-                    total_reward += reward
-                    
-                    loss = agent.replay()
-                    
-                    # Update target network periodically (e.g., every 100 steps)
-                    if episode % 100 == 0:
-                        agent.update_target_network()
-                
-                print(f"Episode: {episode}, Total Reward: {total_reward}, Epsilon: {agent.epsilon}")
+                obj = json.loads(data)
+                if(counter == 1000):
+                    conn.sendall("RESET".encode())
+                    counter = 0
+                else:
+                    conn.sendall(ACTIONS[random.randint(0, 9)].encode())
+                    counter += 1
+
+def train_agent(env, agent, episodes=1000):
+    for episode in range(episodes):
+        state = env.reset()
+        total_reward = 0
+        done = False
+        
+        while not done:
+            action = agent.act(state)
+            next_state, reward, done, _ = env.step(action)
+            agent.remember(state, action, reward, next_state, done)
+            state = next_state
+            total_reward += reward
+            
+            loss = agent.replay()
+            
+            # Update target network periodically (e.g., every 100 steps)
+            if episode % 100 == 0:
+                agent.update_target_network()
+        
+        print(f"Episode: {episode}, Total Reward: {total_reward}, Epsilon: {agent.epsilon}")
 
 if __name__ == "__main__":
     data = start_server()

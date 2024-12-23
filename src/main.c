@@ -103,7 +103,24 @@ static bool isFirstFrame = true;
 
 int sock = 0;
 int reward = 0;
+int total_reward = 0;
 int action = -1;
+
+char* ACTIONS[] = {
+    "FORWARD",
+    "BACKWARD",
+    "LEFT",
+    "RIGHT",
+    "SHOOT",
+    "LSHOOT",
+    "RSHOOT",
+    "FSHOOT",
+    "BSHOOT",
+    "NOOP",
+    "RESET"
+};
+
+char* LAST_10_ACTIONS[10] = {""};
 
 //------------------------------------------------------------------------------------
 // Module Functions Declaration (local)
@@ -168,6 +185,7 @@ void InitGame(void)
     bool correctRange = false;
     victory = false;
     paus = false;
+    total_reward = 0;
 
     shipHeight = (PLAYER_BASE_SIZE/2)/tanf(20*DEG2RAD);
 
@@ -286,7 +304,13 @@ int SendData(void) {
     }
 
     // End JSON array and start shots array
-    chars += snprintf(s_meteors + chars, BUFFER_SIZE - chars, "],\"reward\":%d,\"game_over\":%d,\"shots\":[", reward, gameOver);
+    // 0 -> game not over, 1 -> victory, 2 -> defeat
+    int game_state = 0;
+    if(gameOver){
+        if(victory) game_state = 1;
+        else game_state = 2;
+    }
+    chars += snprintf(s_meteors + chars, BUFFER_SIZE - chars, "],\"reward\":%d,\"game_over\":%d,\"shots\":[", reward, game_state);
 
     // Add player shots positions and rotations to JSON array
     for (int i = 0; i < shotCount; i++) {
@@ -368,6 +392,12 @@ ACTIONS = {
     if(strcmp(response, "NOOP") == 0){
         action = 9;
     }
+
+    // push action to last 10 actions
+    for (int i = 0; i < 9; i++) {
+        LAST_10_ACTIONS[i] = LAST_10_ACTIONS[i + 1];
+    }
+    LAST_10_ACTIONS[9] = ACTIONS[action];
     return 0;
 }
 
@@ -677,6 +707,10 @@ void UpdateGame(void){
 
 
         if (destroyedMeteorsCount == MAX_BIG_METEORS + MAX_MEDIUM_METEORS + MAX_SMALL_METEORS) victory = true;
+        if (victory) {
+            reward += VICTORY_REWARD;
+        }
+        total_reward += reward;
     }
     else
     {
@@ -707,6 +741,24 @@ void DrawGame(void)
             Vector2 v2 = { player.position.x - cosf(player.rotation*DEG2RAD)*(PLAYER_BASE_SIZE/2), player.position.y - sinf(player.rotation*DEG2RAD)*(PLAYER_BASE_SIZE/2) };
             Vector2 v3 = { player.position.x + cosf(player.rotation*DEG2RAD)*(PLAYER_BASE_SIZE/2), player.position.y + sinf(player.rotation*DEG2RAD)*(PLAYER_BASE_SIZE/2) };
             DrawTriangle(v1, v2, v3, MAROON);
+
+            char reward_text[32];
+            sprintf(reward_text, "reward: %d", total_reward);
+            reward_text[31] = '\0';
+            DrawText(reward_text, 10, 10, 20, BLACK);
+
+            char meteor_text[32];
+            sprintf(meteor_text, "meteors: %d", MAX_BIG_METEORS + MAX_MEDIUM_METEORS + MAX_SMALL_METEORS - destroyedMeteorsCount);
+            meteor_text[31] = '\0';
+            DrawText(meteor_text, 10, 40, 20, BLACK);
+
+            // draw last 10 actions
+            for (int i = 0; i < 10; i++) {
+                DrawText(LAST_10_ACTIONS[i], 10, 70 + 30 * i, 20, BLACK);
+            }
+
+
+
 
             // Draw meteors
             for (int i = 0; i < MAX_BIG_METEORS; i++)

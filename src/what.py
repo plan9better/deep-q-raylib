@@ -26,7 +26,7 @@ class StateProcessor:
             game_state['player']['y'] / 600.0,
             np.sin(np.radians(game_state['player']['rotation'])),
             np.cos(np.radians(game_state['player']['rotation'])),
-            game_state['shotsCount'] / 15.0
+            game_state['shotsCount'] / 10.0
         ]
         
         # Process meteors
@@ -195,11 +195,11 @@ def train_agent():
                         
                         if previous_state is not None:
                             reward = current_state['reward']
-                            done = steps >= 5000 or current_state['game_over'] == 1
+                            done = steps >= 5000 or current_state['game_over'] != 0
                             
                             # If game is over, we might want to add a negative reward
-                            if current_state['game_over'] == 1:
-                                reward -= 100  # Optional: penalize death
+                            # if current_state['game_over'] == 1:
+                            #     reward += 100  # Optional: penalize death
                             
                             agent.remember(previous_state, previous_action, reward, 
                                         current_state, done)
