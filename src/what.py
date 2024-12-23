@@ -1,3 +1,4 @@
+import select
 import socket
 import json
 import random
@@ -79,7 +80,7 @@ class DQNNetwork(nn.Module):
 
 class DQNAgent:
     def __init__(self, state_processor, learning_rate=0.001, gamma=0.99,
-                 epsilon=1.0, epsilon_min=0.01, epsilon_decay=0.995,
+                 epsilon=1.0, epsilon_min=0.01, epsilon_decay=0.999995,
                  memory_size=10000, batch_size=32):
         self.state_processor = state_processor
         self.action_size = len(ACTIONS)
@@ -165,6 +166,7 @@ def train_agent():
     # Initialize agent
     state_processor = StateProcessor()
     agent = DQNAgent(state_processor)
+    agent.load("dqn_model_episode_1149.pth")
     
     episode = 0
     total_steps = 0
@@ -173,11 +175,11 @@ def train_agent():
         server_socket.bind((HOST, PORT))
         server_socket.listen()
         print(f"Server listening on {HOST}:{PORT}")
-        conn, addr = server_socket.accept()
+        conn, _ = server_socket.accept()
         
         with conn:
             while True:  # Training loop
-                print(f"Episode {episode} started")
+                print(f"Episode {episode} started, Epsilon: {agent.epsilon}")
                 
                 try:
                     steps = 0
@@ -189,7 +191,7 @@ def train_agent():
                     while True:
                         data = conn.recv(4096)
                         if not data:
-                            break
+                            exit()
                             
                         current_state = json.loads(data)
                         
@@ -230,7 +232,7 @@ def train_agent():
                         total_steps += 1
                         
                         # Update target network periodically
-                        if total_steps % 50000 == 0:
+                        if total_steps % 100000 == 0:
                             agent.update_target_network()
                             agent.save(f"dqn_model_episode_{episode}.pth")
                     

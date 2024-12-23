@@ -38,11 +38,11 @@
 #define MAX_MEDIUM_METEORS  8
 #define MAX_SMALL_METEORS   16
 
-#define TIME_PENALTY       0
-#define HIT_REWARD         100
-#define MISS_PENALTY      -5
-#define DEATH_PENALTY      100
-#define VICTORY_REWARD     200
+#define TIME_PENALTY       -1
+#define HIT_REWARD         500
+#define MISS_PENALTY       -1
+#define DEATH_PENALTY      10000
+#define VICTORY_REWARD     10000
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
@@ -706,9 +706,10 @@ void UpdateGame(void){
         shotCount = newShotCount;
 
 
-        if (destroyedMeteorsCount == MAX_BIG_METEORS + MAX_MEDIUM_METEORS + MAX_SMALL_METEORS) victory = true;
+        if (0 == bigMeteorsCount + midMeteorsCount + smallMeteorsCount) victory = true;
         if (victory) {
             reward += VICTORY_REWARD;
+            gameOver = true;
         }
         total_reward += reward;
     }
@@ -751,6 +752,12 @@ void DrawGame(void)
             sprintf(meteor_text, "meteors: %d", MAX_BIG_METEORS + MAX_MEDIUM_METEORS + MAX_SMALL_METEORS - destroyedMeteorsCount);
             meteor_text[31] = '\0';
             DrawText(meteor_text, 10, 40, 20, BLACK);
+
+
+            char meteor_text2[128];
+            sprintf(meteor_text2, "big: %d, medium: %d, small: %d", bigMeteorsCount, midMeteorsCount, smallMeteorsCount);
+            meteor_text2[127] = '\0';
+            DrawText(meteor_text2, 160, 10, 20, BLACK);
 
             // draw last 10 actions
             for (int i = 0; i < 10; i++) {
